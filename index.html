@@ -13,6 +13,12 @@
       var kCircleRadius = 8;
       var kBlockColor = '#bbb';
 
+      var kKeyLeft = 37;
+      var kKeyUp = 38;
+      var kKeyRight = 39;
+      var kKeyDown = 40;
+
+
       var kMap = [
         "1 1 1 1 1 1 1 1 1 1",
         "1 0 0 0 0 0 0 0 0 1",
@@ -39,6 +45,8 @@
       var kFieldOfViewDegrees = 100;
       var kViewportHeight = 240;
       var kViewportWidth = 320;
+      var kIncrementRotate = 2;
+      var kIncrementMove = 2;
 
       function toA(arrayLike) {
         return Array.prototype.slice.apply(arrayLike);
@@ -80,21 +88,17 @@
       };
 
       function distanceToIntersect(x, y, radAngle) {
-        console.log(x, y);
-
         var rayLength = 1;
         while(rayLength < kMaxRayLength) {
           //  calculate next block
           var nextX = x + (rayLength * Math.sin(radAngle));
           var nextY = y + (rayLength * Math.cos(radAngle));
           if (isSolidPxCoords(nextX, nextY)) {
-            console.log("Found solid at " , nextX, nextY);
 
             if (false) {
               // Ray max extend into a solid block; cut it off at the edges
               var destBlockLeft = Math.floor(nextX / kBlockSize) * kBlockSize;
               var destBlockTop  = Math.floor(nextY / kBlockSize) * kBlockSize;
-              console.log("Intersect block", destBlockLeft, destBlockTop);
               var rayHitX, rayHitY;
               if (x < nextX) {
                 rayHitX = destBlockLeft;
@@ -106,7 +110,6 @@
               } else {
                 rayHitY = destBlockTop + kBlockSize;
               };
-              console.log("Ray hits block at", rayHitX, rayHitY);
               rCanvas.drawPoint(rayHitX, rayHitY);
 
               return distanceBetweenPoints(x, y, rayHitX, rayHitY);
@@ -201,7 +204,6 @@
 
         this.draw = function() {
           if (this.bufferCanvas) {
-            console.log('has one');
             rCanvas.context.drawImage(this.bufferCanvas, 0, 0);
             return;
           };
@@ -225,6 +227,15 @@
         this.y = startY;
         this.viewAngle = viewAngle;
 
+        this.keyMap = {};
+
+        window.addEventListener('keydown', function(e) {
+          this.keyMap[e.keyCode] = true;
+        }.bind(this));
+        window.addEventListener('keyup', function(e) {
+          this.keyMap[e.keyCode] = false;
+        }.bind(this));
+
         this.draw = function() {
           //  Draw player
           rCanvas.drawPoint(this.x, this.y);
@@ -236,6 +247,23 @@
           rCanvas.context.strokeStyle = 'red';
           rCanvas.drawVector(this.x, this.y, deg2rad(this.viewAngle), rayLength);
         };
+
+        this.tick = function() {
+          document.title = this.viewAngle;
+          if (this.keyMap[kKeyLeft]) {
+            this.viewAngle = (360 + (this.viewAngle + kIncrementRotate)) % 360;
+          } else if (this.keyMap[kKeyRight]) {
+            this.viewAngle = (360 + (this.viewAngle - kIncrementRotate)) % 360;
+          };
+
+          if (this.keyMap[kKeyUp]) {
+            this.x += kIncrementMove * Math.sin(deg2rad(this.viewAngle));
+            this.y += kIncrementMove * Math.cos(deg2rad(this.viewAngle));
+          } else if (this.keyMap[kKeyDown]) {
+            this.x -= kIncrementMove * Math.sin(deg2rad(this.viewAngle));
+            this.y -= kIncrementMove * Math.cos(deg2rad(this.viewAngle));
+          };
+        };
       };
 
       var RViewport = function(mapRCanvas, viewportRCanvas, rPlayer) {
@@ -243,7 +271,6 @@
         this.draw = function() {
           mapRCanvas.context.strokeStyle = 'lightblue';
           viewportRCanvas.context.strokeStyle = 'white';
-          console.log('field of view from ', rPlayer.viewAngle - halfFieldOfViewDegrees, 'to', rPlayer.viewAngle + halfFieldOfViewDegrees);
 
           var minAngle = rPlayer.viewAngle - halfFieldOfViewDegrees;
           for(var x = 0; x < kViewportWidth; x++) {
@@ -257,7 +284,9 @@
             //  Draw the column in the viewport
             var wallHeight = (1 - (rayLength / kMaxRayLength)) * kViewportHeight;
             var wallY = kViewportHeight / 2 - wallHeight / 2;
-            viewportRCanvas.drawLine(x, wallY, x, kViewportHeight - wallY);
+            var wallColor = Math.floor((1 - (rayLength / kMaxRayLength)) * 255);
+            viewportRCanvas.context.strokeStyle = 'rgb(' + [wallColor, wallColor, wallColor].join(',') + ')';
+            viewportRCanvas.drawLine(kViewportWidth - x, wallY, kViewportWidth - x, kViewportHeight - wallY);
           };
         };
 
@@ -271,19 +300,25 @@
             this.mapRCanvas.clear();
             this.viewportRCanvas.clear();
 
+            this.rPlayer.tick();
+
             this.rWorld.draw();
-            this.rPlayer.draw();
             this.rViewport.draw();
+            this.rPlayer.draw();
           };
 
           this.tick = function() {
             if (this.lastTick) {
-              console.log('Took ', (new Date) - this.lastTick);
+//               if (Math.random() * 100 < 1)  {
+//                 document.title = Math.floor(1000 / ((new Date) - this.lastTick));
+//               }
             };
             this.lastTick = new Date;
             this.draw();
 
-//             requestAnimationFrame(this.tick.bind(this));
+            setTimeout(function() {
+              requestAnimationFrame(this.tick.bind(this));
+            }.bind(this), 0);
           };
 
           this.init = function() {
@@ -308,8 +343,6 @@
             this.rViewport = new RViewport(this.mapRCanvas, this.viewportRCanvas, this.rPlayer);
 
             this.tick();
-            this.tick();
-
           };
 
           this.init();
