@@ -25,19 +25,21 @@ var RPlayer = function(rCanvas, rMap, startX, startY, startingViewAngle) {
   };
 
   this.tick = function() {
+    var rotateIncrement = this.keyMap[RConst.kKeyShift] ? RConst.kIncrementRotateFast : RConst.kIncrementRotate;
     if (this.keyMap[RConst.kKeyLeft]) {
-      this.viewAngle = (360 + (this.viewAngle + RConst.kIncrementRotate)) % 360;
+      this.viewAngle = (360 + (this.viewAngle + rotateIncrement)) % 360;
     } else if (this.keyMap[RConst.kKeyRight]) {
-      this.viewAngle = (360 + (this.viewAngle - RConst.kIncrementRotate)) % 360;
+      this.viewAngle = (360 + (this.viewAngle - rotateIncrement)) % 360;
     };
 
     var nextX, nextY;
+    var moveIncrement = this.keyMap[RConst.kKeyShift] ? RConst.kIncrementMoveFast : RConst.kIncrementMove;
     if (this.keyMap[RConst.kKeyUp]) {
-      nextX = this.x + RConst.kIncrementMove * Math.sin(RMath.deg2rad(this.viewAngle));
-      nextY = this.y + RConst.kIncrementMove * Math.cos(RMath.deg2rad(this.viewAngle));
+      nextX = this.x + moveIncrement * Math.sin(RMath.deg2rad(this.viewAngle));
+      nextY = this.y + moveIncrement * Math.cos(RMath.deg2rad(this.viewAngle));
     } else if (this.keyMap[RConst.kKeyDown]) {
-      nextX = this.x - RConst.kIncrementMove * Math.sin(RMath.deg2rad(this.viewAngle));
-      nextY = this.y - RConst.kIncrementMove * Math.cos(RMath.deg2rad(this.viewAngle));
+      nextX = this.x - moveIncrement * Math.sin(RMath.deg2rad(this.viewAngle));
+      nextY = this.y - moveIncrement * Math.cos(RMath.deg2rad(this.viewAngle));
     };
 
     // Collision detection
