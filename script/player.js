@@ -31,12 +31,19 @@ var RPlayer = function(rCanvas, rMap, startX, startY, startingViewAngle) {
       this.viewAngle = (360 + (this.viewAngle - RConst.kIncrementRotate)) % 360;
     };
 
+    var nextX, nextY;
     if (this.keyMap[RConst.kKeyUp]) {
-      this.x += RConst.kIncrementMove * Math.sin(RMath.deg2rad(this.viewAngle));
-      this.y += RConst.kIncrementMove * Math.cos(RMath.deg2rad(this.viewAngle));
+      nextX = this.x + RConst.kIncrementMove * Math.sin(RMath.deg2rad(this.viewAngle));
+      nextY = this.y + RConst.kIncrementMove * Math.cos(RMath.deg2rad(this.viewAngle));
     } else if (this.keyMap[RConst.kKeyDown]) {
-      this.x -= RConst.kIncrementMove * Math.sin(RMath.deg2rad(this.viewAngle));
-      this.y -= RConst.kIncrementMove * Math.cos(RMath.deg2rad(this.viewAngle));
+      nextX = this.x - RConst.kIncrementMove * Math.sin(RMath.deg2rad(this.viewAngle));
+      nextY = this.y - RConst.kIncrementMove * Math.cos(RMath.deg2rad(this.viewAngle));
     };
+
+    // Collision detection
+    if (nextX && nextY && !rMap.isSolidPxCoords(nextX, nextY)) {
+      this.x = nextX;
+      this.y = nextY;
+    }
   };
 };

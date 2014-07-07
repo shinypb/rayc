@@ -1,7 +1,5 @@
 window.Rayc = {
-  init: function(mapCanvasSel, viewportCanvasSel) {
-    console.log("init");
-
+  init: function() {
     this.draw = function() {
       this.mapRCanvas.clear();
       this.viewportRCanvas.clear();
@@ -30,27 +28,34 @@ window.Rayc = {
     this.init = function() {
       this.rMap = new RMap('demo1');
 
-      this.mapCanvasElem = document.querySelector(mapCanvasSel);
-      this.mapRCanvas = new RCanvas(this.mapCanvasElem, '#eee', this.rMap.width * RConst.kBlockSize, this.rMap.height * RConst.kBlockSize);
+      this.mapRCanvas = new RCanvas(
+        _name = 'rayc-map',
+        _backgroundColor = '#eee',
+        _width = this.rMap.width * RConst.kBlockSize,
+        _height = this.rMap.height * RConst.kBlockSize
+      );
 
-      this.viewportCanvasElem = document.querySelector(viewportCanvasSel);
-      this.viewportRCanvas = new RCanvas(this.viewportCanvasElem, 'black', RConst.kViewportWidth, RConst.kViewportHeight);
+      this.viewportRCanvas = new RCanvas(
+        'rayc-viewport',
+        'black',
+        RConst.kViewportWidth,
+        RConst.kViewportHeight
+      );
 
       this.rWorld = new RWorld(this.mapRCanvas, this.rMap);
-      this.viewportCanvasElem.width = RConst.kViewportWidth;
-      this.viewportCanvasElem.height = RConst.kViewportHeight;
 
       this.rPlayer = new RPlayer(
         this.mapRCanvas,
         this.rMap,
-        64, 128,
-        112
+        64, 128, // starting position in pixels TODO: should be given in blocks
+        112 // initial view angle
       );
       this.rViewport = new RViewport(
         this.mapRCanvas,
         this.viewportRCanvas,
         this.rPlayer,
-        this.rMap
+        this.rMap,
+        'img/background.png'
       );
 
       this.tick();

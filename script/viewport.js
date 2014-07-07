@@ -1,6 +1,10 @@
-window.RViewport = function(mapRCanvas, viewportRCanvas, rPlayer, rMap) {
+window.RViewport = function(mapRCanvas, viewportRCanvas, rPlayer, rMap, backgroundImageName) {
   var halfFieldOfViewDegrees = RConst.kFieldOfViewDegrees / 2;
   this.draw = function() {
+    if (this.backgroundImage) {
+      viewportRCanvas.context.drawImage(this.backgroundImage, 0, 0);
+    };
+
     mapRCanvas.context.strokeStyle = 'lightblue';
     viewportRCanvas.context.strokeStyle = 'white';
 
@@ -21,4 +25,14 @@ window.RViewport = function(mapRCanvas, viewportRCanvas, rPlayer, rMap) {
       viewportRCanvas.drawLine(RConst.kViewportWidth - x, wallY, RConst.kViewportWidth - x, RConst.kViewportHeight - wallY);
     };
   };
+
+  this.init = function() {
+    if(backgroundImageName) {
+      this.backgroundImage = new Image();
+      this.backgroundImage.src = backgroundImageName;
+    }
+  };
+
+  this.init();
+
 };

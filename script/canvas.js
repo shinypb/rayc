@@ -1,4 +1,8 @@
-var RCanvas = function(canvasElem, backgroundColor, width, height) {
+var RCanvas = function(canvasId, backgroundColor, width, height) {
+
+  var canvasElem = document.createElement('canvas');
+  canvasElem.id = canvasId;
+  document.body.appendChild(canvasElem);
 
   this.width = width;
   this.height = height;
