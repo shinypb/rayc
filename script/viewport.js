@@ -11,11 +11,7 @@ window.RViewport = function(mapRCanvas, viewportRCanvas, rPlayer, rMap, backgrou
     var minAngle = rPlayer.viewAngle - halfFieldOfViewDegrees;
     for(var x = 0; x < RConst.kViewportWidth; x++) {
       var angle = minAngle + ((x / RConst.kViewportWidth) * RConst.kFieldOfViewDegrees);
-
       var rayLength = rMap.distanceToIntersect(rPlayer.x, rPlayer.y, RMath.deg2rad(angle));
-
-      //  Draw the vector in the top-down view
-      mapRCanvas.drawVector(rPlayer.x, rPlayer.y, RMath.deg2rad(angle), rayLength);
 
       //  Draw the column in the viewport
       var maxHeight = RConst.kViewportHeight * 1.5;
