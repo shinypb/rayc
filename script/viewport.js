@@ -18,10 +18,15 @@ window.RViewport = function(mapRCanvas, viewportRCanvas, rPlayer, rMap, backgrou
       mapRCanvas.drawVector(rPlayer.x, rPlayer.y, RMath.deg2rad(angle), rayLength);
 
       //  Draw the column in the viewport
-      var wallHeight = (1 - (rayLength / rMap.maxRayLength)) * RConst.kViewportHeight;
-      var wallY = RConst.kViewportHeight / 2 - wallHeight / 2;
-      var wallColor = Math.floor((1 - (rayLength / rMap.maxRayLength)) * 255);
+      var maxHeight = RConst.kViewportHeight * 1.5;
+      var fractionOfMaximumDistance = 1 - (rayLength / rMap.maxRayLength);
+      var wallHeight = Math.pow(maxHeight, fractionOfMaximumDistance);
+
+      //  The farther the wall is from us, the darker it should be
+      var wallColor = Math.floor(fractionOfMaximumDistance * fractionOfMaximumDistance * 255);
       viewportRCanvas.context.strokeStyle = 'rgb(' + [wallColor, wallColor, wallColor].join(',') + ')';
+
+      var wallY = (RConst.kViewportHeight / 2 - wallHeight / 2);
       viewportRCanvas.drawLine(RConst.kViewportWidth - x, wallY, RConst.kViewportWidth - x, RConst.kViewportHeight - wallY);
     };
   };
