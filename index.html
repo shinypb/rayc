@@ -4,130 +4,160 @@
     <canvas id="c"></canvas>
     <canvas id="viewport"></canvas>
   </body>
-  <script>
-    (function() {
-      var kGridColor = '#ccc'
-      var kBlockSize = 32;
-      var kCircleFill = 'rgba(0, 0, 200, 0.25)';
-      var kCircleStroke = 'rgba(0, 0, 50, 0.75)';
-      var kCircleRadius = 8;
-      var kBlockColor = '#bbb';
+  <script>console.log('----------', new Date);</script>
+  <script id="rconst">
+    window.RConst = {
+      kBlockSize: 32,
 
-      var kKeyLeft = 37;
-      var kKeyUp = 38;
-      var kKeyRight = 39;
-      var kKeyDown = 40;
+      //  Visual appearance
+      kBlockColor: '#bbb',
+      kGridColor: '#ccc',
+      kPointFill: 'rgba(0, 0, 200, 0.25)',
+      kPointStroke: 'rgba(0, 0, 50, 0.75)',
+      kPointRadius: 8,
 
+      // Key codes
+      kKeyLeft: 37,
+      kKeyUp: 38,
+      kKeyRight: 39,
+      kKeyDown: 40,
 
-      var kMap = [
-        "1 1 1 1 1 1 1 1 1 1",
-        "1 0 0 0 0 0 0 0 0 1",
-        "1 0 0 0 0 0 1 0 0 1",
-        "1 0 0 0 0 0 0 0 0 1",
-        "1 0 0 0 0 0 0 0 0 1",
-        "1 0 0 0 0 0 0 0 0 1",
-        "1 0 0 0 0 0 0 0 0 1",
-        "1 0 0 0 0 0 0 0 0 1",
-        "1 0 0 0 0 0 0 0 0 1",
-        "1 1 1 1 1 1 1 1 1 1",
-      ];
-      var kSolidityMap = kMap.map(function(row) {
-        return row.replace(/\s/g, '').split('').map(function(elem) {
-          return elem == '1';
-        });
-      }).reduce(function(acc, elem) {
-        return acc.concat(elem);
-      }, [])
-      var kWorldHeight = kMap.length;
-      var kWorldWidth = kSolidityMap.length / kWorldHeight;
-      var kMaxRayLength = Math.ceil(Math.sqrt(Math.pow(kWorldHeight, 2) + Math.pow(kWorldWidth, 2))) * kBlockSize;
-      console.log('World is', kWorldWidth, 'x', kWorldHeight, 'so ray length is', kMaxRayLength);
-      var kFieldOfViewDegrees = 100;
-      var kViewportHeight = 240;
-      var kViewportWidth = 320;
-      var kIncrementRotate = 2;
-      var kIncrementMove = 2;
+      // 3D rendering
+      kFieldOfViewDegrees: 160,
+      kViewportHeight: 240,
+      kViewportWidth: 320,
 
-      function toA(arrayLike) {
-        return Array.prototype.slice.apply(arrayLike);
+      // Player movement
+      kIncrementRotate: 2,
+      kIncrementMove: 2,
+    };
+
+  </script>
+  <script id="rmap">
+
+    window.RMap = function(mapName) {
+      this.isSolidBlockCoords = function(x, y) {
+        var index = (y * this.width) + x;
+        return this.solidityMap[index];
       };
 
-      function $(sel) {
-        return toA(document.querySelectorAll(sel));
+      this.isSolidPxCoords = function(xPx, yPx) {
+        return this.isSolidBlockCoords(Math.floor(xPx / RConst.kBlockSize), Math.floor(yPx / RConst.kBlockSize));
       };
 
-      function deg2rad(angle) {
-        return (angle * Math.PI) / 180;
-      };
-
-      function deg(angle) {
-        return {
-          degrees: angle,
-          radians: deg2rad(angle)
-        }
-      };
-
-      function rad(rads) {
-        return {
-          degrees: NaN,
-          radians: rads
-        }
-      };
-
-      function isSolidBlockCoords(x, y) {
-        var index = (y * kWorldWidth) + x;
-        return kSolidityMap[index];
-      };
-
-      function isSolidPxCoords(xPx, yPx) {
-        return isSolidBlockCoords(Math.floor(xPx / kBlockSize), Math.floor(yPx / kBlockSize));
-      };
-
-      function distanceBetweenPoints(x1, y1, x2, y2) {
-        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-      };
-
-      function distanceToIntersect(x, y, radAngle) {
+      this.distanceToIntersect = function(x, y, radAngle) {
         var rayLength = 1;
-        while(rayLength < kMaxRayLength) {
+        while(rayLength < this.maxRayLength) {
           //  calculate next block
           var nextX = x + (rayLength * Math.sin(radAngle));
           var nextY = y + (rayLength * Math.cos(radAngle));
-          if (isSolidPxCoords(nextX, nextY)) {
+          if (this.isSolidPxCoords(nextX, nextY)) {
 
             if (false) {
               // Ray max extend into a solid block; cut it off at the edges
-              var destBlockLeft = Math.floor(nextX / kBlockSize) * kBlockSize;
-              var destBlockTop  = Math.floor(nextY / kBlockSize) * kBlockSize;
+              var destBlockLeft = Math.floor(nextX / RConst.kBlockSize) * RConst.kBlockSize;
+              var destBlockTop  = Math.floor(nextY / RConst.kBlockSize) * RConst.kBlockSize;
               var rayHitX, rayHitY;
               if (x < nextX) {
                 rayHitX = destBlockLeft;
               } else {
-                rayHitX = destBlockLeft + kBlockSize;
+                rayHitX = destBlockLeft + RConst.kBlockSize;
               };
               if (y < nextY) {
                 rayHitY = destBlockTop;
               } else {
-                rayHitY = destBlockTop + kBlockSize;
+                rayHitY = destBlockTop + RConst.kBlockSize;
               };
               rCanvas.drawPoint(rayHitX, rayHitY);
 
               return distanceBetweenPoints(x, y, rayHitX, rayHitY);
             } else {
               // lazy/easy way
-              return distanceBetweenPoints(x, y, nextX, nextY);
+              return RMath.distanceBetweenPoints(x, y, nextX, nextY);
             };
           };
 
-          rayLength += 1 ; // would prefer to use kBlockSize / 2;
+          rayLength += 1 ; // would prefer to use RConst.kBlockSize / 2;
         };
 
         throw 'Unable to find an intersection';
       };
 
-      var RCanvas = function(canvasElem, backgroundColor) {
-        this.width  = canvasElem.offsetWidth;
-        this.height = canvasElem.offsetHeight;
+
+      this.init = function() {
+        /**
+         *  Maps are defined with arrays like this:
+         *  [
+         *    '111',
+         *    '101',
+         *    '111'
+         *  ]
+         *  Blocks containing '1' are walls, everything else is floor.
+         *
+         *  This function transforms that structure into an array with one boolean per block:
+         *  [
+         *    true, true, true,
+         *    true, false, true,
+         *    true, true, true
+         *  ]
+         *
+         */
+        var rawMapData = RMaps[mapName]
+        this.solidityMap = rawMapData.map(function(row) {
+          return row.replace(/\s/g, '').split('').map(function(elem) {
+            return elem == '#';
+          });
+        }).reduce(function(acc, elem) {
+          return acc.concat(elem);
+        }, [])
+
+        this.height = rawMapData.length;
+        this.width = this.solidityMap.length / this.height;
+        this.maxRayLength = Math.ceil(Math.sqrt(Math.pow(this.height, 2) + Math.pow(this.width, 2))) * RConst.kBlockSize;
+        console.log('World is', this.width, 'x', this.height, 'so ray length is', this.maxRayLength);
+      };
+
+      this.init();
+    };
+
+    window.RMaps = {
+      demo1: [
+        "# # # # # # # # # #",
+        "# # - - - - - - - #",
+        "# - # - - - # - - #",
+        "# - - - - - - - - #",
+        "# - - - - - - - - #",
+        "# - - - - - - - - #",
+        "# - - - - - - - - #",
+        "# - # - - - - - - #",
+        "# - # - - - - - - #",
+        "# # # # # # # # # #",
+      ]
+    };
+
+
+  </script>
+  <script id="rmath">
+    window.RMath = {
+      deg2rad: function(angle) {
+        return (angle * Math.PI) / 180;
+      },
+
+      distanceBetweenPoints: function (x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+      },
+    };
+  </script>
+  <script>
+    (function() {
+
+
+      var RCanvas = function(canvasElem, backgroundColor, width, height) {
+
+        this.width = width;
+        this.height = height;
+        canvasElem.width = width;
+        canvasElem.height = height;
 
         var context = canvasElem.getContext('2d');
         this.context = context;
@@ -164,39 +194,35 @@
 
         this.drawPoint = function(x, y) {
           context.beginPath();
-          context.arc(x, y, kCircleRadius, 0, 2 * Math.PI, false);
-          context.fillStyle = kCircleFill;
+          context.arc(x, y, RConst.kPointRadius, 0, 2 * Math.PI, false);
+          context.fillStyle = RConst.kPointFill;
           context.fill();
 
           context.beginPath();
           context.arc(x, y, 1, 0, 2 * Math.PI, false);
           context.lineWidth = 1;
-          context.strokeStyle = kCircleStroke;
+          context.strokeStyle = RConst.kPointStroke;
           context.stroke();
         };
       };
 
-      var RWorld = function(rCanvas) {
-        var kWorldWidth = rCanvas.width / kBlockSize;
-        var kWorldHeight = rCanvas.height / kBlockSize;
-
+      var RWorld = function(rCanvas, map) {
         this.drawBlocks = function() {
-          console.log(kSolidityMap.length);
-          for(var i = 0; i < kSolidityMap.length; i++) {
-            if (kSolidityMap[i]) {
-              var x = i % kWorldWidth;
-              var y = (i - x) / kWorldWidth;
-              rCanvas.fillRect(x * kBlockSize, y * kBlockSize, kBlockSize, kBlockSize, kBlockColor);
+          for(var i = 0; i < map.solidityMap.length; i++) {
+            if (map.solidityMap[i]) {
+              var x = i % map.width;
+              var y = (i - x) / map.width;
+              rCanvas.fillRect(x * RConst.kBlockSize, y * RConst.kBlockSize, RConst.kBlockSize, RConst.kBlockSize, RConst.kBlockColor);
             }
           };
         };
 
         this.drawGrid = function() {
-          rCanvas.context.strokeStyle = kGridColor;
+          rCanvas.context.strokeStyle = RConst.kGridColor;
           if (rCanvas.height != rCanvas.width) {
             throw "drawGrid expects a square canvas";
           };
-          for(var i = 0; i < rCanvas.width; i += kBlockSize) {
+          for(var i = 0; i < rCanvas.width; i += RConst.kBlockSize) {
             rCanvas.drawLine(i, 0, i, rCanvas.height - 1);
             rCanvas.drawLine(0, i, rCanvas.width - 1, i);
           };
@@ -218,14 +244,19 @@
           this.bufferCanvas.width = rCanvas.width;
           window.bs = this.bufferCanvas;
           var bufferCanvasContext = this.bufferCanvas.getContext('2d');
-          bufferCanvasContext.drawImage(rCanvas.elem, 0, 0, 320, 320);
+          bufferCanvasContext.drawImage(rCanvas.elem, 0, 0);
         };
+
+        this.init = function() {
+        };
+
+        this.init();
       };
 
-      var RPlayer = function(rCanvas, startX, startY, viewAngle) {
+      var RPlayer = function(rCanvas, rMap, startX, startY, startingViewAngle) {
         this.x = startX;
         this.y = startY;
-        this.viewAngle = viewAngle;
+        this.viewAngle = startingViewAngle;
 
         this.keyMap = {};
 
@@ -241,52 +272,51 @@
           rCanvas.drawPoint(this.x, this.y);
 
           //  See what ray hits
-          var rayLength = distanceToIntersect(this.x, this.y, deg2rad(this.viewAngle));
+          var rayLength = rMap.distanceToIntersect(this.x, this.y, RMath.deg2rad(this.viewAngle));
 
           //  Draw ray
           rCanvas.context.strokeStyle = 'red';
-          rCanvas.drawVector(this.x, this.y, deg2rad(this.viewAngle), rayLength);
+          rCanvas.drawVector(this.x, this.y, RMath.deg2rad(this.viewAngle), rayLength);
         };
 
         this.tick = function() {
-          document.title = this.viewAngle;
-          if (this.keyMap[kKeyLeft]) {
-            this.viewAngle = (360 + (this.viewAngle + kIncrementRotate)) % 360;
-          } else if (this.keyMap[kKeyRight]) {
-            this.viewAngle = (360 + (this.viewAngle - kIncrementRotate)) % 360;
+          if (this.keyMap[RConst.kKeyLeft]) {
+            this.viewAngle = (360 + (this.viewAngle + RConst.kIncrementRotate)) % 360;
+          } else if (this.keyMap[RConst.kKeyRight]) {
+            this.viewAngle = (360 + (this.viewAngle - RConst.kIncrementRotate)) % 360;
           };
 
-          if (this.keyMap[kKeyUp]) {
-            this.x += kIncrementMove * Math.sin(deg2rad(this.viewAngle));
-            this.y += kIncrementMove * Math.cos(deg2rad(this.viewAngle));
-          } else if (this.keyMap[kKeyDown]) {
-            this.x -= kIncrementMove * Math.sin(deg2rad(this.viewAngle));
-            this.y -= kIncrementMove * Math.cos(deg2rad(this.viewAngle));
+          if (this.keyMap[RConst.kKeyUp]) {
+            this.x += RConst.kIncrementMove * Math.sin(RMath.deg2rad(this.viewAngle));
+            this.y += RConst.kIncrementMove * Math.cos(RMath.deg2rad(this.viewAngle));
+          } else if (this.keyMap[RConst.kKeyDown]) {
+            this.x -= RConst.kIncrementMove * Math.sin(RMath.deg2rad(this.viewAngle));
+            this.y -= RConst.kIncrementMove * Math.cos(RMath.deg2rad(this.viewAngle));
           };
         };
       };
 
-      var RViewport = function(mapRCanvas, viewportRCanvas, rPlayer) {
-        var halfFieldOfViewDegrees = kFieldOfViewDegrees / 2;
+      var RViewport = function(mapRCanvas, viewportRCanvas, rPlayer, rMap) {
+        var halfFieldOfViewDegrees = RConst.kFieldOfViewDegrees / 2;
         this.draw = function() {
           mapRCanvas.context.strokeStyle = 'lightblue';
           viewportRCanvas.context.strokeStyle = 'white';
 
           var minAngle = rPlayer.viewAngle - halfFieldOfViewDegrees;
-          for(var x = 0; x < kViewportWidth; x++) {
-            var angle = minAngle + ((x / kViewportWidth) * kFieldOfViewDegrees);
+          for(var x = 0; x < RConst.kViewportWidth; x++) {
+            var angle = minAngle + ((x / RConst.kViewportWidth) * RConst.kFieldOfViewDegrees);
 
-            var rayLength = distanceToIntersect(rPlayer.x, rPlayer.y, deg2rad(angle));
+            var rayLength = rMap.distanceToIntersect(rPlayer.x, rPlayer.y, RMath.deg2rad(angle));
 
             //  Draw the vector in the top-down view
-            mapRCanvas.drawVector(rPlayer.x, rPlayer.y, deg2rad(angle), rayLength);
+            mapRCanvas.drawVector(rPlayer.x, rPlayer.y, RMath.deg2rad(angle), rayLength);
 
             //  Draw the column in the viewport
-            var wallHeight = (1 - (rayLength / kMaxRayLength)) * kViewportHeight;
-            var wallY = kViewportHeight / 2 - wallHeight / 2;
-            var wallColor = Math.floor((1 - (rayLength / kMaxRayLength)) * 255);
+            var wallHeight = (1 - (rayLength / rMap.maxRayLength)) * RConst.kViewportHeight;
+            var wallY = RConst.kViewportHeight / 2 - wallHeight / 2;
+            var wallColor = Math.floor((1 - (rayLength / rMap.maxRayLength)) * 255);
             viewportRCanvas.context.strokeStyle = 'rgb(' + [wallColor, wallColor, wallColor].join(',') + ')';
-            viewportRCanvas.drawLine(kViewportWidth - x, wallY, kViewportWidth - x, kViewportHeight - wallY);
+            viewportRCanvas.drawLine(RConst.kViewportWidth - x, wallY, RConst.kViewportWidth - x, RConst.kViewportHeight - wallY);
           };
         };
 
@@ -322,25 +352,31 @@
           };
 
           this.init = function() {
-            this.canvasElem = $(mapCanvasSel)[0];
-            if (!this.canvasElem) {
-              throw "No canvas found with selector " + mapCanvasSel;
-            }
-            this.canvasElem.width = kWorldWidth * kBlockSize;
-            this.canvasElem.height = kWorldHeight * kBlockSize;
+            this.rMap = new RMap('demo1');
 
-            this.viewportCanvasElem = $(viewportCanvasSel)[0];
-            if (!this.viewportCanvasElem) {
-              throw "No canvas found with selector " + viewportCanvasSel;
-            };
-            this.viewportCanvasElem.width = kViewportWidth;
-            this.viewportCanvasElem.height = kViewportHeight;
+            this.mapCanvasElem = document.querySelector(mapCanvasSel);
+            this.mapRCanvas = new RCanvas(this.mapCanvasElem, '#eee', this.rMap.width * RConst.kBlockSize, this.rMap.height * RConst.kBlockSize);
+//            this.mapRCanvas.d = true;
 
-            this.mapRCanvas = new RCanvas(this.canvasElem, '#eee');
-            this.viewportRCanvas = new RCanvas(this.viewportCanvasElem, 'black');
-            this.rWorld = new RWorld(this.mapRCanvas);
-            this.rPlayer = new RPlayer(this.mapRCanvas, 64, 128, 112);
-            this.rViewport = new RViewport(this.mapRCanvas, this.viewportRCanvas, this.rPlayer);
+            this.viewportCanvasElem = document.querySelector(viewportCanvasSel);
+            this.viewportRCanvas = new RCanvas(this.viewportCanvasElem, 'black', RConst.kViewportWidth, RConst.kViewportHeight);
+
+            this.rWorld = new RWorld(this.mapRCanvas, this.rMap);
+            this.viewportCanvasElem.width = RConst.kViewportWidth;
+            this.viewportCanvasElem.height = RConst.kViewportHeight;
+
+            this.rPlayer = new RPlayer(
+              this.mapRCanvas,
+              this.rMap,
+              64, 128,
+              112
+            );
+            this.rViewport = new RViewport(
+              this.mapRCanvas,
+              this.viewportRCanvas,
+              this.rPlayer,
+              this.rMap
+            );
 
             this.tick();
           };
